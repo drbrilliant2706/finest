@@ -12,55 +12,31 @@ import {
 } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-const recentOrders = [
-  {
-    id: 'ORD-001',
-    customer: 'John Doe',
-    date: '2024-01-05',
-    amount: 75000,
-    status: 'completed'
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Jane Smith',
-    date: '2024-01-04',
-    amount: 120000,
-    status: 'processing'
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Peter Jones',
-    date: '2024-01-03',
-    amount: 45000,
-    status: 'shipped'
-  }
-];
+interface RecentOrder {
+  id: string;
+  order_number: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  customers: {
+    first_name: string;
+    last_name: string;
+  } | null;
+}
 
-const lowStockItems = [
-  {
-    id: 'PROD-001',
-    name: 'AFRIKA\'S FINEST Mask Tee',
-    stock: 8,
-    threshold: 10
-  },
-  {
-    id: 'PROD-002',
-    name: 'FINEST Crop Collection',
-    stock: 5,
-    threshold: 10
-  },
-  {
-    id: 'PROD-003',
-    name: 'NYUMBANI QWETU Tee',
-    stock: 2,
-    threshold: 5
-  }
-];
+interface LowStockItem {
+  id: string;
+  name: string;
+  stock_quantity: number;
+  low_stock_threshold: number;
+}
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'completed':
+    case 'delivered':
       return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
     case 'processing':
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
@@ -129,6 +105,51 @@ const LoadingSkeleton = () => (
 
 const AdminDashboard = () => {
   const { stats, loading } = useDashboardStats();
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecentData = async () => {
+      try {
+        // Fetch recent orders
+        const { data: orders } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            order_number,
+            total_amount,
+            status,
+            created_at,
+            customers (first_name, last_name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        // Fetch low stock products
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, name, stock_quantity, low_stock_threshold')
+          .lte('stock_quantity', supabase.rpc ? 10 : 10)
+          .order('stock_quantity', { ascending: true })
+          .limit(5);
+
+        // Filter low stock items client-side
+        const lowStock = (products || []).filter(
+          p => p.stock_quantity <= (p.low_stock_threshold || 10)
+        );
+
+        setRecentOrders(orders || []);
+        setLowStockItems(lowStock);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchRecentData();
+  }, []);
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -148,28 +169,28 @@ const AdminDashboard = () => {
         <StatCard
           title="Total Revenue"
           value={`TSh ${stats.total_revenue.toLocaleString()}`}
-          change="+20.1% from last month"
+          change={stats.monthly_revenue > 0 ? `TSh ${stats.monthly_revenue.toLocaleString()} this month` : 'No revenue yet'}
           icon={DollarSign}
-          trend="up"
+          trend={stats.monthly_revenue > 0 ? 'up' : 'neutral'}
         />
         <StatCard
           title="Orders"
           value={stats.total_orders}
-          change="+12% from last month"
+          change={stats.pending_orders > 0 ? `${stats.pending_orders} pending` : 'No pending orders'}
           icon={ShoppingBag}
-          trend="up"
+          trend={stats.total_orders > 0 ? 'up' : 'neutral'}
         />
         <StatCard
           title="Customers"
           value={stats.total_customers}
-          change="+5.7% from last month"
+          change={stats.total_customers > 0 ? 'Total registered' : 'No customers yet'}
           icon={Users}
-          trend="up"
+          trend={stats.total_customers > 0 ? 'up' : 'neutral'}
         />
         <StatCard
           title="Products"
           value={stats.total_products}
-          change="+2 new this week"
+          change={`${stats.active_products} active`}
           icon={Package}
           trend="neutral"
         />
@@ -187,34 +208,56 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-3 sm:space-y-4">
-              {recentOrders.map((order, index) => (
-                <div 
-                  key={order.id} 
-                  className={`flex items-center justify-between py-2 sm:py-3 ${
-                    index !== recentOrders.length - 1 ? 'border-b border-border/50' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-muted flex items-center justify-center">
-                      <span className="text-xs sm:text-sm font-medium">
-                        {order.customer.split(' ').map(n => n[0]).join('')}
-                      </span>
+            {ordersLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16" />
+                ))}
+              </div>
+            ) : recentOrders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No orders yet
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {recentOrders.map((order, index) => (
+                  <div 
+                    key={order.id} 
+                    className={`flex items-center justify-between py-2 sm:py-3 ${
+                      index !== recentOrders.length - 1 ? 'border-b border-border/50' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-xs sm:text-sm font-medium">
+                          {order.customers 
+                            ? `${order.customers.first_name?.[0] || ''}${order.customers.last_name?.[0] || ''}`
+                            : 'N/A'
+                          }
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm sm:text-base font-medium">
+                          {order.customers 
+                            ? `${order.customers.first_name || ''} ${order.customers.last_name || ''}`.trim() || 'Unknown'
+                            : 'Unknown Customer'
+                          }
+                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          {order.order_number} • {new Date(order.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm sm:text-base font-medium">{order.customer}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">{order.id} • {order.date}</p>
+                    <div className="text-right">
+                      <p className="text-sm sm:text-base font-semibold">TSh {order.total_amount.toLocaleString()}</p>
+                      <Badge className={`text-xs capitalize ${getStatusColor(order.status)}`}>
+                        {order.status}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm sm:text-base font-semibold">TSh {order.amount.toLocaleString()}</p>
-                    <Badge className={`text-xs capitalize ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -231,42 +274,54 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-3 sm:space-y-4">
-              {lowStockItems.map((item, index) => (
-                <div 
-                  key={item.id} 
-                  className={`flex items-center justify-between py-2 sm:py-3 ${
-                    index !== lowStockItems.length - 1 ? 'border-b border-border/50' : ''
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm sm:text-base font-medium truncate">{item.name}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden max-w-24 sm:max-w-32">
-                        <div 
-                          className={`h-full rounded-full ${
-                            item.stock <= 2 ? 'bg-red-500' : item.stock <= 5 ? 'bg-amber-500' : 'bg-yellow-500'
-                          }`}
-                          style={{ width: `${(item.stock / item.threshold) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                        {item.stock}/{item.threshold}
-                      </span>
-                    </div>
-                  </div>
-                  <Badge 
-                    className={`ml-2 text-xs ${
-                      item.stock <= 2 
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' 
-                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+            {ordersLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-14" />
+                ))}
+              </div>
+            ) : lowStockItems.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No low stock items
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {lowStockItems.map((item, index) => (
+                  <div 
+                    key={item.id} 
+                    className={`flex items-center justify-between py-2 sm:py-3 ${
+                      index !== lowStockItems.length - 1 ? 'border-b border-border/50' : ''
                     }`}
                   >
-                    {item.stock <= 2 ? 'Critical' : 'Low'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm sm:text-base font-medium truncate">{item.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden max-w-24 sm:max-w-32">
+                          <div 
+                            className={`h-full rounded-full ${
+                              item.stock_quantity <= 2 ? 'bg-red-500' : item.stock_quantity <= 5 ? 'bg-amber-500' : 'bg-yellow-500'
+                            }`}
+                            style={{ width: `${Math.min((item.stock_quantity / (item.low_stock_threshold || 10)) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                          {item.stock_quantity}/{item.low_stock_threshold || 10}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge 
+                      className={`ml-2 text-xs ${
+                        item.stock_quantity <= 2 
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' 
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                      }`}
+                    >
+                      {item.stock_quantity <= 2 ? 'Critical' : 'Low'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

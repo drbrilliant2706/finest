@@ -1,7 +1,5 @@
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -11,12 +9,19 @@ import {
   CreditCard, 
   DollarSign, 
   Shield, 
-  Settings,
   CheckCircle,
-  AlertTriangle,
   Smartphone,
   Building
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface PaymentStats {
+  totalOrders: number;
+  paidOrders: number;
+  totalRevenue: number;
+  pendingPayments: number;
+}
 
 const paymentMethods = [
   {
@@ -56,21 +61,73 @@ const paymentMethods = [
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-    case 'inactive': return 'bg-brand-green/10 text-brand-green dark:bg-brand-green/20 dark:text-brand-green-light';
-    case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+    case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
     default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
   }
 };
 
 const PaymentSettings = () => {
   const [activeTab, setActiveTab] = useState('methods');
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<PaymentStats>({
+    totalOrders: 0,
+    paidOrders: 0,
+    totalRevenue: 0,
+    pendingPayments: 0
+  });
+
+  useEffect(() => {
+    const fetchPaymentStats = async () => {
+      try {
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('total_amount, payment_status');
+
+        if (orders) {
+          const paidOrders = orders.filter(o => o.payment_status === 'paid');
+          const pendingOrders = orders.filter(o => o.payment_status === 'pending');
+          
+          setStats({
+            totalOrders: orders.length,
+            paidOrders: paidOrders.length,
+            totalRevenue: paidOrders.reduce((sum, o) => sum + o.total_amount, 0),
+            pendingPayments: pendingOrders.reduce((sum, o) => sum + o.total_amount, 0)
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching payment stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentStats();
+  }, []);
+
+  const successRate = stats.totalOrders > 0 
+    ? ((stats.paidOrders / stats.totalOrders) * 100).toFixed(1) 
+    : '0';
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Payment Settings</h2>
         <p className="text-muted-foreground">
-          Configure payment methods, fees, and processing options
+          Configure payment methods and view payment statistics
         </p>
       </div>
 
@@ -83,8 +140,8 @@ const PaymentSettings = () => {
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold">3</div>
-                <p className="text-sm text-muted-foreground">Active Methods</p>
+                <div className="text-2xl font-bold">{stats.paidOrders}</div>
+                <p className="text-sm text-muted-foreground">Paid Orders</p>
               </div>
             </div>
           </CardContent>
@@ -96,8 +153,13 @@ const PaymentSettings = () => {
                 <DollarSign className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold">1.8%</div>
-                <p className="text-sm text-muted-foreground">Avg. Fees</p>
+                <div className="text-2xl font-bold">
+                  TSh {stats.totalRevenue >= 1000000 
+                    ? `${(stats.totalRevenue / 1000000).toFixed(1)}M` 
+                    : stats.totalRevenue.toLocaleString()
+                  }
+                </div>
+                <p className="text-sm text-muted-foreground">Total Revenue</p>
               </div>
             </div>
           </CardContent>
@@ -109,7 +171,7 @@ const PaymentSettings = () => {
                 <Shield className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold">99.9%</div>
+                <div className="text-2xl font-bold">{successRate}%</div>
                 <p className="text-sm text-muted-foreground">Success Rate</p>
               </div>
             </div>
@@ -122,8 +184,10 @@ const PaymentSettings = () => {
                 <CreditCard className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold">TSh 1.2M</div>
-                <p className="text-sm text-muted-foreground">Monthly Volume</p>
+                <div className="text-2xl font-bold">
+                  TSh {stats.pendingPayments.toLocaleString()}
+                </div>
+                <p className="text-sm text-muted-foreground">Pending</p>
               </div>
             </div>
           </CardContent>
