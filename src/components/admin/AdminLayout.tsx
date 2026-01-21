@@ -8,14 +8,8 @@ const AdminDashboard = lazy(() => import('./AdminDashboard'));
 const ProductManagement = lazy(() => import('./ProductManagement'));
 const OrderManagement = lazy(() => import('./OrderManagement'));
 const CustomerManagement = lazy(() => import('./CustomerManagement'));
-const InventoryManagement = lazy(() => import('./InventoryManagement'));
 const Analytics = lazy(() => import('./Analytics'));
-const ContentManagement = lazy(() => import('./ContentManagement'));
-const VendorManagement = lazy(() => import('./VendorManagement'));
-const PricingPromotions = lazy(() => import('./PricingPromotions'));
 const PaymentSettings = lazy(() => import('./PaymentSettings'));
-const SecurityFraud = lazy(() => import('./SecurityFraud'));
-const SecurityMonitor = lazy(() => import('./SecurityMonitor'));
 const NewsletterManagement = lazy(() => import('./NewsletterManagement'));
 
 const ComponentLoader = () => (
@@ -47,14 +41,8 @@ export const AdminLayout = () => {
               <TabsTrigger value="products" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Products</TabsTrigger>
               <TabsTrigger value="orders" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Orders</TabsTrigger>
               <TabsTrigger value="customers" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Customers</TabsTrigger>
-              <TabsTrigger value="inventory" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Inventory</TabsTrigger>
               <TabsTrigger value="analytics" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Analytics</TabsTrigger>
-              <TabsTrigger value="content" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Content</TabsTrigger>
-              <TabsTrigger value="vendors" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Vendors</TabsTrigger>
-              <TabsTrigger value="pricing" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Pricing</TabsTrigger>
               <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Payments</TabsTrigger>
-              <TabsTrigger value="security" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Security</TabsTrigger>
-              <TabsTrigger value="monitor" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Monitor</TabsTrigger>
               <TabsTrigger value="newsletter" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Newsletter</TabsTrigger>
             </TabsList>
           </div>
@@ -83,51 +71,15 @@ export const AdminLayout = () => {
             </Suspense>
           </TabsContent>
 
-          <TabsContent value="inventory">
-            <Suspense fallback={<ComponentLoader />}>
-              <InventoryManagement />
-            </Suspense>
-          </TabsContent>
-
           <TabsContent value="analytics">
             <Suspense fallback={<ComponentLoader />}>
               <Analytics />
             </Suspense>
           </TabsContent>
 
-          <TabsContent value="content">
-            <Suspense fallback={<ComponentLoader />}>
-              <ContentManagement />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="vendors">
-            <Suspense fallback={<ComponentLoader />}>
-              <VendorManagement />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="pricing">
-            <Suspense fallback={<ComponentLoader />}>
-              <PricingPromotions />
-            </Suspense>
-          </TabsContent>
-
           <TabsContent value="payments">
             <Suspense fallback={<ComponentLoader />}>
               <PaymentSettings />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="security">
-            <Suspense fallback={<ComponentLoader />}>
-              <SecurityFraud />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="monitor">
-            <Suspense fallback={<ComponentLoader />}>
-              <SecurityMonitor />
             </Suspense>
           </TabsContent>
 
