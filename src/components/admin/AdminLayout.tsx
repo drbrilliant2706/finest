@@ -11,6 +11,7 @@ const CustomerManagement = lazy(() => import('./CustomerManagement'));
 const Analytics = lazy(() => import('./Analytics'));
 const PaymentSettings = lazy(() => import('./PaymentSettings'));
 const NewsletterManagement = lazy(() => import('./NewsletterManagement'));
+const TransactionManagement = lazy(() => import('./TransactionManagement'));
 
 const ComponentLoader = () => (
   <div className="space-y-4">
@@ -43,6 +44,7 @@ export const AdminLayout = () => {
               <TabsTrigger value="customers" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Customers</TabsTrigger>
               <TabsTrigger value="analytics" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Analytics</TabsTrigger>
               <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Payments</TabsTrigger>
+              <TabsTrigger value="transactions" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Transactions</TabsTrigger>
               <TabsTrigger value="newsletter" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Newsletter</TabsTrigger>
             </TabsList>
           </div>
@@ -80,6 +82,12 @@ export const AdminLayout = () => {
           <TabsContent value="payments">
             <Suspense fallback={<ComponentLoader />}>
               <PaymentSettings />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="transactions">
+            <Suspense fallback={<ComponentLoader />}>
+              <TransactionManagement />
             </Suspense>
           </TabsContent>
 
