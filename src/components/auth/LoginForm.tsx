@@ -86,9 +86,6 @@ const LoginForm = ({ onSuccess, onSwitchToRegister }: LoginFormProps) => {
                 Register here
               </button>
             </p>
-            <p className="text-green-400 text-xs mt-2">
-              Demo Admin: admin@africansfinest.com / admin123
-            </p>
           </div>
         </form>
       </CardContent>

@@ -117,54 +117,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log('Attempting login for:', email);
       
-      // Handle demo admin with fallback creation
-      if (email === 'admin@africansfinest.com' && password === 'admin123') {
-        try {
-          // First try to sign in
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-          if (error && error.message === 'Invalid login credentials') {
-            console.log('Demo admin not found, creating account...');
-            
-            // If login fails, create the demo admin account
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-              email,
-              password,
-              options: {
-                data: {
-                  name: 'Admin'
-                }
-              }
-            });
-
-            if (signUpError) {
-              console.error('Demo admin creation error:', signUpError);
-              setError(signUpError.message);
-              return false;
-            }
-
-            console.log('Demo admin account created:', signUpData.user?.email);
-            return !!signUpData.user;
-          }
-
-          if (error) {
-            console.error('Login error:', error);
-            setError(error.message);
-            return false;
-          }
-
-          return !!data.user;
-        } catch (err) {
-          console.error('Demo admin login/creation error:', err);
-          setError(err instanceof Error ? err.message : 'Login failed');
-          return false;
-        }
-      }
-
-      // Regular user login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
