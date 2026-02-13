@@ -519,6 +519,75 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          buyer_email: string | null
+          buyer_name: string | null
+          buyer_phone: string
+          created_at: string
+          currency: string
+          customer_id: string | null
+          id: string
+          order_id: string | null
+          profit: number | null
+          reference: string | null
+          result: string | null
+          sonicpesa_order_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          buyer_email?: string | null
+          buyer_name?: string | null
+          buyer_phone: string
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          id?: string
+          order_id?: string | null
+          profit?: number | null
+          reference?: string | null
+          result?: string | null
+          sonicpesa_order_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          buyer_email?: string | null
+          buyer_name?: string | null
+          buyer_phone?: string
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          id?: string
+          order_id?: string | null
+          profit?: number | null
+          reference?: string | null
+          result?: string | null
+          sonicpesa_order_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_products: {
         Row: {
           created_at: string | null
