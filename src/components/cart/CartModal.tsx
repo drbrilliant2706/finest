@@ -49,18 +49,38 @@ const CartModal = ({ isOpen, onClose }: CartModalProps) => {
     setPaymentStatus('processing');
 
     try {
-      // Create customer
-      const { data: customer, error: customerError } = await supabase
+      // Find or create customer
+      const customerEmailValue = customerEmail || `${phone}@guest.local`;
+      let customer;
+      
+      // Try to find existing customer by email
+      const { data: existingCustomer } = await supabase
         .from('customers')
-        .insert({
+        .select()
+        .eq('email', customerEmailValue)
+        .maybeSingle();
+
+      if (existingCustomer) {
+        customer = existingCustomer;
+        // Update name/phone if changed
+        await supabase.from('customers').update({
           first_name: customerName,
           phone: phone,
-          email: customerEmail || `${phone}@guest.local`,
-        })
-        .select()
-        .single();
+        }).eq('id', existingCustomer.id);
+      } else {
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert({
+            first_name: customerName,
+            phone: phone,
+            email: customerEmailValue,
+          })
+          .select()
+          .single();
 
-      if (customerError) throw customerError;
+        if (customerError) throw customerError;
+        customer = newCustomer;
+      }
 
       // Calculate totals
       const subtotal = items.reduce((sum, item) => {
