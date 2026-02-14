@@ -7,6 +7,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useProductsQuery } from "@/hooks/useProductsQuery";
+import { ProductSkeleton } from "@/components/ui/ProductSkeleton";
 import ProfileModal from "@/components/profile/ProfileModal";
 import CartModal from "@/components/cart/CartModal";
 import SearchModal from "@/components/search/SearchModal";
@@ -28,36 +30,15 @@ const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "FINEST African Mask Tee",
-      price: "TSh 25,000",
-      image: "/lovable-uploads/83e9eb03-ffaa-4765-956a-cb1f637e3b77.png",
-      badge: "BESTSELLER"
-    },
-    {
-      id: 2,
-      name: "FINEST Blue Oversized Tee",
-      price: "TSh 25,000",
-      image: "/lovable-uploads/1f0eef57-3784-4a0d-84d8-62b9fcb1c8d9.png",
-      badge: "LIMITED"
-    },
-    {
-      id: 3,
-      name: "NYUMBANI QWETU Collection",
-      price: "TSh 25,000",
-      image: "/lovable-uploads/86a2ceca-f52f-4c63-91b6-7fd6da14145f.png",
-      badge: "EXCLUSIVE"
-    },
-    {
-      id: 4,
-      name: "AFRIKA'S Finest Tee",
-      price: "TSh 25,000",
-      image: "/lovable-uploads/036867e1-6684-4f8f-889e-e89c5719d973.png",
-      badge: "NEW"
-    }
-  ];
+  const { products, loading: productsLoading } = useProductsQuery({ limit: 4 });
+
+  const featuredProducts = products.map(product => ({
+    id: product.id,
+    name: product.name,
+    price: `TSh ${product.price.toLocaleString()}`,
+    image: product.images && product.images.length > 0 ? product.images[0] : "/placeholder.svg",
+    badge: "NEW"
+  }));
 
   const handleAddToCart = (product: any) => {
     if (!user) {
@@ -114,6 +95,7 @@ const Index = () => {
 
   // Preload critical images on mount
   useEffect(() => {
+    if (featuredProducts.length === 0) return;
     const criticalImages = featuredProducts.slice(0, 2).map(p => ({
       src: p.image,
       priority: 'high' as const
@@ -122,7 +104,7 @@ const Index = () => {
     batchPreloadImages(criticalImages).catch(err => 
       console.error('Failed to preload images:', err)
     );
-  }, []);
+  }, [featuredProducts]);
 
   return (
     <div className="min-h-screen bg-white text-black">
@@ -268,6 +250,9 @@ const Index = () => {
               </div>
             </DropAnimation>
 
+          {productsLoading ? (
+            <ProductSkeleton count={4} />
+          ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {featuredProducts.map((product, index) => (
               <DropAnimation key={product.id} delay={800 + index * 150} dropHeight={50}>
@@ -285,7 +270,7 @@ const Index = () => {
                     <div className="absolute top-3 right-3">
                       <Heart 
                         className={`h-5 w-5 sm:h-6 sm:w-6 cursor-pointer transition-colors ${
-                          isFavorite(product.id) ? 'text-primary fill-primary' : 'text-gray-400 hover:text-primary'
+                          isFavorite(Number(product.id)) ? 'text-primary fill-primary' : 'text-gray-400 hover:text-primary'
                         }`}
                         onClick={() => handleToggleFavorite(product)}
                       />
@@ -305,6 +290,7 @@ const Index = () => {
               </DropAnimation>
             ))}
           </div>
+          )}
 
           <DropAnimation delay={1400} dropHeight={30}>
             <div className="text-center mt-6 sm:mt-8 md:mt-12">
