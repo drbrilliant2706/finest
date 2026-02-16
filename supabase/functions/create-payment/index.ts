@@ -13,9 +13,8 @@ Deno.serve(async (req) => {
 
   try {
     const SONICPESA_API_KEY = Deno.env.get("SONICPESA_API_KEY");
-    const SONICPESA_API_SECRET = Deno.env.get("SONICPESA_API_SECRET");
-    if (!SONICPESA_API_KEY || !SONICPESA_API_SECRET) {
-      throw new Error("SonicPesa credentials not configured");
+    if (!SONICPESA_API_KEY) {
+      throw new Error("SonicPesa API key not configured");
     }
 
     const { buyer_email, buyer_name, buyer_phone, amount, currency, order_id, customer_id } = await req.json();
@@ -32,7 +31,6 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: {
         "X-API-KEY": SONICPESA_API_KEY,
-        "X-API-SECRET": SONICPESA_API_SECRET,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -41,15 +39,20 @@ Deno.serve(async (req) => {
         buyer_phone,
         amount,
         currency: currency || "TZS",
+        link_url: null,
       }),
     });
 
     const data = await response.json();
+    console.log("SonicPesa response:", JSON.stringify(data));
 
-    if (!response.ok) {
+    if (!response.ok || data.status === "error") {
       console.error("SonicPesa error:", data);
-      throw new Error(`SonicPesa API error [${response.status}]: ${JSON.stringify(data)}`);
+      throw new Error(`SonicPesa API error: ${data.message || JSON.stringify(data)}`);
     }
+
+    // Extract order_id from nested response
+    const sonicpesaOrderId = data.data?.order_id || data.order_id || null;
 
     // Store transaction in database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -59,7 +62,7 @@ Deno.serve(async (req) => {
     const { error: txError } = await supabase.from("transactions").insert({
       order_id,
       customer_id,
-      sonicpesa_order_id: data.order_id || data.id || null,
+      sonicpesa_order_id: sonicpesaOrderId,
       amount,
       currency: currency || "TZS",
       buyer_phone,
