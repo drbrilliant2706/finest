@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface FavoriteItem {
-  id: number;
+  id: string;
   name: string;
   price: string;
   image: string;
@@ -11,8 +11,8 @@ interface FavoriteItem {
 interface FavoritesContextType {
   favorites: FavoriteItem[];
   addToFavorites: (product: FavoriteItem) => void;
-  removeFromFavorites: (id: number) => void;
-  isFavorite: (id: number) => boolean;
+  removeFromFavorites: (id: string) => void;
+  isFavorite: (id: string) => boolean;
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
@@ -32,11 +32,11 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
     setFavorites(prev => [...prev, product]);
   };
 
-  const removeFromFavorites = (id: number) => {
+  const removeFromFavorites = (id: string) => {
     setFavorites(prev => prev.filter(item => item.id !== id));
   };
 
-  const isFavorite = (id: number) => {
+  const isFavorite = (id: string) => {
     return favorites.some(item => item.id === id);
   };
 

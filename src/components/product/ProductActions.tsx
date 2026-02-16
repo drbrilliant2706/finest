@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ProductActionsProps {
   product: {
-    id: number;
+    id: string;
     name: string;
     price: string;
     image: string;

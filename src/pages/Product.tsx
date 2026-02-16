@@ -17,7 +17,7 @@ interface DatabaseProduct {
 }
 
 interface ProductDetailType {
-  id: number;
+  id: string;
   name: string;
   price: string;
   image: string;
@@ -53,7 +53,7 @@ const Product = () => {
         if (data) {
           // Transform database product to ProductDetail format
           const transformedProduct: ProductDetailType = {
-            id: parseInt(data.id) || 0,
+            id: data.id,
             name: data.name,
             price: `TSh ${data.price.toLocaleString()}`,
             image: data.images?.[0] || '/placeholder.svg',

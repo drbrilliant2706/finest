@@ -7,7 +7,7 @@ import ProductActions from "./ProductActions";
 
 interface ProductDetailProps {
   product: {
-    id: number;
+    id: string;
     name: string;
     price: string;
     image: string;

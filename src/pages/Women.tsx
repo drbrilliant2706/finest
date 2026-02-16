@@ -217,7 +217,7 @@ const Women = () => {
                     <div className="absolute top-3 right-3">
                       <Heart 
                         className={`h-5 w-5 sm:h-6 sm:w-6 cursor-pointer transition-colors ${
-                          isFavorite(Number(product.id)) ? 'text-black fill-black' : 'text-gray-400 hover:text-black'
+                          isFavorite(product.id) ? 'text-black fill-black' : 'text-gray-400 hover:text-black'
                         }`}
                         onClick={() => handleToggleFavorite(product)}
                       />
