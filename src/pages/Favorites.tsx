@@ -37,7 +37,7 @@ const Favorites = () => {
     });
   };
 
-  const handleRemoveFromFavorites = (id: number) => {
+  const handleRemoveFromFavorites = (id: string) => {
     removeFromFavorites(id);
     toast({
       title: "Removed from favorites",
