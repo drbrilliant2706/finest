@@ -16,6 +16,7 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin }: RegisterFormProps) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
 
@@ -23,16 +24,30 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin }: RegisterFormProps) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      setLoading(false);
+      return;
+    }
 
     try {
       const success = await register(email, password, name);
       if (success) {
-        onSuccess();
+        setSuccess('Account created successfully! Please check your email to confirm your account.');
       } else {
         setError('Registration failed. Please try again.');
       }
-    } catch (err) {
-      setError('Registration failed. Please try again.');
+    } catch (err: any) {
+      const message = err?.message || 'Registration failed. Please try again.';
+      if (message.includes('already registered') || message.includes('already been registered')) {
+        setError('This email is already registered. Please login instead.');
+      } else if (message.includes('invalid')) {
+        setError('Invalid email address. Please check and try again.');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -78,7 +93,8 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin }: RegisterFormProps) => {
               required
             />
           </div>
-          {error && <p className="text-green-400 text-sm">{error}</p>}
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {success && <p className="text-green-400 text-sm">{success}</p>}
           <Button
             type="submit"
             disabled={loading}
