@@ -18,7 +18,7 @@ const Auth = () => {
   }, [user, navigate]);
 
   const handleSuccess = () => {
-    navigate('/admin');
+    navigate('/');
   };
 
   return (
