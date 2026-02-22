@@ -35,7 +35,8 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin }: RegisterFormProps) => {
     try {
       const success = await register(email, password, name);
       if (success) {
-        setSuccess('Account created successfully! Please check your email to confirm your account.');
+        setSuccess('Account created successfully! You can now login.');
+        setTimeout(() => onSuccess(), 1500);
       } else {
         setError('Registration failed. Please try again.');
       }
