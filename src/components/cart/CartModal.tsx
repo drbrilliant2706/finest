@@ -121,7 +121,7 @@ const CartModal = ({ isOpen, onClose }: CartModalProps) => {
 
       if (itemsError) throw itemsError;
 
-      // Trigger USSD push payment via SonicPesa
+      // Trigger USSD push payment via Snippe
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
         body: {
           buyer_email: customerEmail || undefined,
