@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 interface Transaction {
   id: string;
   order_id: string | null;
-  sonicpesa_order_id: string | null;
+  snippe_reference: string | null;
   reference: string | null;
   amount: number;
   currency: string;
