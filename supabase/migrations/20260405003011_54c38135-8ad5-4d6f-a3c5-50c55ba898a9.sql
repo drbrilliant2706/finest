@@ -1,0 +1,1 @@
+ALTER TABLE public.transactions RENAME COLUMN sonicpesa_order_id TO snippe_reference;

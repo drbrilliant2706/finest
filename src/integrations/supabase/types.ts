@@ -533,7 +533,7 @@ export type Database = {
           profit: number | null
           reference: string | null
           result: string | null
-          sonicpesa_order_id: string | null
+          snippe_reference: string | null
           status: string
           updated_at: string
         }
@@ -550,7 +550,7 @@ export type Database = {
           profit?: number | null
           reference?: string | null
           result?: string | null
-          sonicpesa_order_id?: string | null
+          snippe_reference?: string | null
           status?: string
           updated_at?: string
         }
@@ -567,7 +567,7 @@ export type Database = {
           profit?: number | null
           reference?: string | null
           result?: string | null
-          sonicpesa_order_id?: string | null
+          snippe_reference?: string | null
           status?: string
           updated_at?: string
         }
