@@ -12,20 +12,38 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const payload = await req.json();
-    console.log("Webhook received:", JSON.stringify(payload));
+    const rawBody = await req.text();
+    console.log("Webhook received:", rawBody);
 
-    const { order_id, result, amount, currency, buyer_phone, reference, timestamp } = payload;
+    const payload = JSON.parse(rawBody);
+
+    // Support both current (2026-01-25) and legacy webhook formats
+    const eventType = payload.type || payload.event;
+    const eventData = payload.data || payload;
+    const reference = eventData.reference || payload.reference;
+    const status = eventData.status || payload.status;
+    const amountValue = eventData.amount?.value || eventData.amount || 0;
+    const currency = eventData.amount?.currency || "TZS";
+    const customerPhone = eventData.customer?.phone || "";
+    const externalReference = eventData.external_reference || payload.external_reference || null;
+
+    // Calculate net/fees from settlement if available
+    const settlement = eventData.settlement || {};
+    const fees = settlement.fees?.value || 0;
+    const netAmount = settlement.net?.value || (amountValue - fees);
+
+    // Extract order_id from metadata
+    const orderId = eventData.metadata?.order_id || null;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Update transaction status
+    // Find transaction by snippe_reference
     const { data: transactions, error: findError } = await supabase
       .from("transactions")
       .select("*, orders(subtotal, total_amount)")
-      .eq("sonicpesa_order_id", order_id)
+      .eq("snippe_reference", reference)
       .limit(1);
 
     if (findError) {
@@ -33,43 +51,43 @@ Deno.serve(async (req) => {
     }
 
     const transaction = transactions?.[0];
-    const status = result === "SUCCESS" ? "completed" : "failed";
+    const dbStatus = status === "completed" ? "completed" : "failed";
 
     if (transaction) {
-      // Calculate profit (total_amount - cost, simplified as 30% margin)
-      const profit = result === "SUCCESS" ? amount * 0.3 : 0;
+      // Calculate profit from settlement data (net - cost, or use net as profit indicator)
+      const profit = status === "completed" ? netAmount * 0.3 : 0;
 
       await supabase
         .from("transactions")
         .update({
-          status,
-          result,
-          reference,
+          status: dbStatus,
+          result: status,
+          reference: externalReference,
           profit,
         })
-        .eq("sonicpesa_order_id", order_id);
+        .eq("snippe_reference", reference);
 
       // Update order payment status
       if (transaction.order_id) {
         await supabase
           .from("orders")
           .update({
-            payment_status: result === "SUCCESS" ? "paid" : "failed",
-            status: result === "SUCCESS" ? "processing" : "pending",
+            payment_status: status === "completed" ? "paid" : "failed",
+            status: status === "completed" ? "processing" : "pending",
           })
           .eq("id", transaction.order_id);
       }
     } else {
       // No matching transaction found, create one
       await supabase.from("transactions").insert({
-        sonicpesa_order_id: order_id,
-        amount,
-        currency: currency || "TZS",
-        buyer_phone,
-        reference,
-        status,
-        result,
-        profit: result === "SUCCESS" ? amount * 0.3 : 0,
+        snippe_reference: reference,
+        amount: amountValue,
+        currency,
+        buyer_phone: customerPhone,
+        reference: externalReference,
+        status: dbStatus,
+        result: status,
+        profit: status === "completed" ? netAmount * 0.3 : 0,
       });
     }
 

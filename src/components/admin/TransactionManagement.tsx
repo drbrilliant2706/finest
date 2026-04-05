@@ -77,7 +77,7 @@ const TransactionManagement = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Transactions & Revenue</h2>
-        <p className="text-muted-foreground">SonicPesa mobile money transactions and profit tracking</p>
+        <p className="text-muted-foreground">Snippe mobile money transactions and profit tracking</p>
       </div>
 
       {/* Revenue Stats */}

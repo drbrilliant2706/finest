@@ -12,9 +12,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const SONICPESA_API_KEY = Deno.env.get("SONICPESA_API_KEY");
-    if (!SONICPESA_API_KEY) {
-      throw new Error("SonicPesa API key not configured");
+    const SNIPPE_API_KEY = Deno.env.get("SNIPPE_API_KEY");
+    if (!SNIPPE_API_KEY) {
+      throw new Error("Snippe API key not configured");
     }
 
     const { buyer_email, buyer_name, buyer_phone, amount, currency, order_id, customer_id } = await req.json();
@@ -26,46 +26,73 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Call SonicPesa API to create payment (USSD push)
-    const response = await fetch("https://api.sonicpesa.com/api/v1/payment/create_order", {
+    // Ensure phone starts with 255 (no +)
+    let phone = buyer_phone.replace(/\s+/g, "").replace(/^\+/, "");
+    if (phone.startsWith("0")) {
+      phone = "255" + phone.slice(1);
+    }
+
+    // Build webhook URL
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const webhookUrl = `${supabaseUrl}/functions/v1/payment-webhook`;
+
+    // Generate idempotency key (max 30 chars)
+    const idempotencyKey = order_id ? order_id.slice(0, 30) : crypto.randomUUID().slice(0, 30);
+
+    // Split buyer_name into first/last
+    const nameParts = (buyer_name || "").split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    // Call Snippe API to create mobile money payment
+    const response = await fetch("https://api.snippe.sh/v1/payments", {
       method: "POST",
       headers: {
-        "X-API-KEY": SONICPESA_API_KEY,
+        "Authorization": `Bearer ${SNIPPE_API_KEY}`,
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify({
-        buyer_email: buyer_email || "",
-        buyer_name: buyer_name || "",
-        buyer_phone,
-        amount,
-        currency: currency || "TZS",
-        link_url: null,
+        payment_type: "mobile",
+        details: {
+          amount: Math.round(amount),
+          currency: currency || "TZS",
+        },
+        phone_number: phone,
+        customer: {
+          firstname: firstName,
+          lastname: lastName,
+          email: buyer_email || "",
+        },
+        webhook_url: webhookUrl,
+        metadata: {
+          order_id: order_id || "",
+        },
       }),
     });
 
     const data = await response.json();
-    console.log("SonicPesa response:", JSON.stringify(data));
+    console.log("Snippe response:", JSON.stringify(data));
 
     if (!response.ok || data.status === "error") {
-      console.error("SonicPesa error:", data);
-      throw new Error(`SonicPesa API error: ${data.message || JSON.stringify(data)}`);
+      console.error("Snippe error:", data);
+      throw new Error(`Snippe API error: ${data.message || JSON.stringify(data)}`);
     }
 
-    // Extract order_id from nested response
-    const sonicpesaOrderId = data.data?.order_id || data.order_id || null;
+    // Extract reference from response
+    const snippeReference = data.data?.reference || null;
 
     // Store transaction in database
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { error: txError } = await supabase.from("transactions").insert({
       order_id,
       customer_id,
-      sonicpesa_order_id: sonicpesaOrderId,
-      amount,
+      snippe_reference: snippeReference,
+      amount: Math.round(amount),
       currency: currency || "TZS",
-      buyer_phone,
+      buyer_phone: phone,
       buyer_name,
       buyer_email,
       status: "pending",
