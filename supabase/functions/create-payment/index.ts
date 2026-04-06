@@ -44,6 +44,33 @@ Deno.serve(async (req) => {
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
+    // Build request body
+    const requestBody: Record<string, unknown> = {
+      payment_type: "mobile",
+      details: {
+        amount: Math.round(amount),
+        currency: currency || "TZS",
+      },
+      phone_number: phone,
+      webhook_url: webhookUrl,
+    };
+
+    // Add optional customer info
+    if (firstName || lastName || buyer_email) {
+      requestBody.customer = {
+        firstname: firstName || "Customer",
+        lastname: lastName || "",
+        email: buyer_email || `${phone}@guest.local`,
+      };
+    }
+
+    // Add metadata if order_id exists
+    if (order_id) {
+      requestBody.metadata = { order_id };
+    }
+
+    console.log("Snippe request body:", JSON.stringify(requestBody));
+
     // Call Snippe API to create mobile money payment
     const response = await fetch("https://api.snippe.sh/v1/payments", {
       method: "POST",
@@ -52,23 +79,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
         "Idempotency-Key": idempotencyKey,
       },
-      body: JSON.stringify({
-        payment_type: "mobile",
-        details: {
-          amount: Math.round(amount),
-          currency: currency || "TZS",
-        },
-        phone_number: phone,
-        customer: {
-          firstname: firstName,
-          lastname: lastName,
-          email: buyer_email || "",
-        },
-        webhook_url: webhookUrl,
-        metadata: {
-          order_id: order_id || "",
-        },
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
