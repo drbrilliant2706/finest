@@ -6,6 +6,58 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Constant-time comparison to prevent timing attacks
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  const encoder = new TextEncoder();
+  const bufA = encoder.encode(a);
+  const bufB = encoder.encode(b);
+  let result = 0;
+  for (let i = 0; i < bufA.length; i++) {
+    result |= bufA[i] ^ bufB[i];
+  }
+  return result === 0;
+}
+
+async function verifySignature(rawBody: string, headers: Headers, signingKey: string): Promise<boolean> {
+  const timestamp = headers.get("x-webhook-timestamp");
+  const signature = headers.get("x-webhook-signature");
+
+  if (!timestamp || !signature) {
+    console.error("Missing webhook timestamp or signature headers");
+    return false;
+  }
+
+  // Reject requests older than 5 minutes (replay attack prevention)
+  const eventTime = parseInt(timestamp, 10);
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (currentTime - eventTime > 300) {
+    console.error("Webhook timestamp too old:", currentTime - eventTime, "seconds");
+    return false;
+  }
+
+  // Compute expected signature: HMAC-SHA256(signing_key, "{timestamp}.{raw_body}")
+  const message = `${timestamp}.${rawBody}`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(signingKey),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signatureBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  const expectedSignature = Array.from(new Uint8Array(signatureBytes))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  if (!timingSafeEqual(signature, expectedSignature)) {
+    console.error("Invalid webhook signature");
+    return false;
+  }
+
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -14,6 +66,20 @@ Deno.serve(async (req) => {
   try {
     const rawBody = await req.text();
     console.log("Webhook received:", rawBody);
+
+    // Verify webhook signature
+    const webhookSecret = Deno.env.get("SNIPPE_WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const isValid = await verifySignature(rawBody, req.headers, webhookSecret);
+      if (!isValid) {
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      console.warn("SNIPPE_WEBHOOK_SECRET not set — skipping signature verification");
+    }
 
     const payload = JSON.parse(rawBody);
 
@@ -54,7 +120,6 @@ Deno.serve(async (req) => {
     const dbStatus = status === "completed" ? "completed" : "failed";
 
     if (transaction) {
-      // Calculate profit from settlement data (net - cost, or use net as profit indicator)
       const profit = status === "completed" ? netAmount * 0.3 : 0;
 
       await supabase
