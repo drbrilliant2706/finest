@@ -8,6 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import CartItemCard from './CartItemCard';
+import CheckoutForm from './CheckoutForm';
+import PaymentStatus from './PaymentStatus';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -30,7 +33,6 @@ const CartModal = ({ isOpen, onClose }: CartModalProps) => {
       return;
     }
 
-    // Ensure phone is in 255 format
     let phone = customerPhone.replace(/\s+/g, '').replace(/^\+/, '');
     if (phone.startsWith('0')) {
       phone = '255' + phone.slice(1);
@@ -49,79 +51,18 @@ const CartModal = ({ isOpen, onClose }: CartModalProps) => {
     setPaymentStatus('processing');
 
     try {
-      // Find or create customer
-      const customerEmailValue = customerEmail || `${phone}@guest.local`;
-      let customer;
-      
-      // Try to find existing customer by email
-      const { data: existingCustomer } = await supabase
-        .from('customers')
-        .select()
-        .eq('email', customerEmailValue)
-        .maybeSingle();
-
-      if (existingCustomer) {
-        customer = existingCustomer;
-        // Update name/phone if changed
-        await supabase.from('customers').update({
-          first_name: customerName,
-          phone: phone,
-        }).eq('id', existingCustomer.id);
-      } else {
-        const { data: newCustomer, error: customerError } = await supabase
-          .from('customers')
-          .insert({
-            first_name: customerName,
-            phone: phone,
-            email: customerEmailValue,
-          })
-          .select()
-          .single();
-
-        if (customerError) throw customerError;
-        customer = newCustomer;
-      }
-
-      // Calculate totals
       const subtotal = items.reduce((sum, item) => {
         const price = parseFloat(item.price.replace(/[^\d.]/g, ''));
         return sum + (price * item.quantity);
       }, 0);
 
-      // Create order
-      const orderNumber = `ORD-${Date.now()}`;
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_id: customer.id,
-          order_number: orderNumber,
-          status: 'pending',
-          payment_status: 'pending',
-          subtotal,
-          total_amount: subtotal,
-          currency: 'TZS',
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        product_id: item.id.toString(),
+      const cartItems = items.map(item => ({
+        id: item.id,
         quantity: item.quantity,
         unit_price: parseFloat(item.price.replace(/[^\d.]/g, '')),
-        total_price: parseFloat(item.price.replace(/[^\d.]/g, '')) * item.quantity,
       }));
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Trigger USSD push payment via Snippe
+      // All DB operations now happen server-side in the edge function
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
         body: {
           buyer_email: customerEmail || undefined,
@@ -129,8 +70,7 @@ const CartModal = ({ isOpen, onClose }: CartModalProps) => {
           buyer_phone: phone,
           amount: subtotal,
           currency: 'TZS',
-          order_id: order.id,
-          customer_id: customer.id,
+          items: cartItems,
         },
       });
 
@@ -149,7 +89,7 @@ const CartModal = ({ isOpen, onClose }: CartModalProps) => {
         }, 4000);
       } else {
         setPaymentStatus('failed');
-        toast.error('Payment request failed. Your order has been saved. Please try again.');
+        toast.error(paymentData?.error || 'Payment request failed. Please try again.');
       }
     } catch (error) {
       console.error('Order submission error:', error);
