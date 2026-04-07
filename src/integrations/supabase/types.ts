@@ -221,6 +221,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "inventory_transactions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_products"
+            referencedColumns: ["id"]
+          },
         ]
       }
       newsletter_subscribers: {
@@ -318,6 +325,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_products"
             referencedColumns: ["id"]
           },
         ]
@@ -622,6 +636,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendor_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vendor_products_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -677,7 +698,81 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_products: {
+        Row: {
+          brand: string | null
+          care_instructions: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          dimensions: Json | null
+          gender: string | null
+          id: string | null
+          images: string[] | null
+          is_featured: boolean | null
+          material: string | null
+          name: string | null
+          price: number | null
+          seo_description: string | null
+          seo_title: string | null
+          size_guide: Json | null
+          sku: string | null
+          status: Database["public"]["Enums"]["product_status"] | null
+          stock_quantity: number | null
+          tags: string[] | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          brand?: string | null
+          care_instructions?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          dimensions?: Json | null
+          gender?: string | null
+          id?: string | null
+          images?: string[] | null
+          is_featured?: boolean | null
+          material?: string | null
+          name?: string | null
+          price?: number | null
+          seo_description?: string | null
+          seo_title?: string | null
+          size_guide?: Json | null
+          sku?: string | null
+          status?: Database["public"]["Enums"]["product_status"] | null
+          stock_quantity?: number | null
+          tags?: string[] | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          brand?: string | null
+          care_instructions?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          dimensions?: Json | null
+          gender?: string | null
+          id?: string | null
+          images?: string[] | null
+          is_featured?: boolean | null
+          material?: string | null
+          name?: string | null
+          price?: number | null
+          seo_description?: string | null
+          seo_title?: string | null
+          size_guide?: Json | null
+          sku?: string | null
+          status?: Database["public"]["Enums"]["product_status"] | null
+          stock_quantity?: number | null
+          tags?: string[] | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_dashboard_stats: { Args: never; Returns: Json }
