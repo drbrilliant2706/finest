@@ -282,7 +282,11 @@ const Index = () => {
                       <PrefetchLink to={`/product/${product.id}`}>
                         <h4 className="text-black font-medium text-sm sm:text-base hover:underline cursor-pointer line-clamp-2">{product.name}</h4>
                       </PrefetchLink>
-                      <span className="text-gray-400 hover:text-black cursor-pointer ml-2" onClick={() => handleAddToCart(product)}>+</span>
+                      <button 
+                        className="text-muted-foreground hover:text-foreground cursor-pointer ml-2 p-1 min-w-[28px] min-h-[28px] flex items-center justify-center touch-manipulation text-lg font-medium"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAddToCart(product); }}
+                        aria-label={`Add ${product.name} to cart`}
+                      >+</button>
                     </div>
                     <p className="text-black text-sm sm:text-base">{product.price}</p>
                   </div>
