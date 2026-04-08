@@ -89,10 +89,10 @@ const Product = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading product...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-green mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading product...</p>
         </div>
       </div>
     );
