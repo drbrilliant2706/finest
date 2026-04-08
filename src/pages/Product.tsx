@@ -53,11 +53,13 @@ const Product = () => {
 
         if (data) {
           // Transform database product to ProductDetail format
+          const allImages = data.images && data.images.length > 0 ? data.images : ['/placeholder.svg'];
           const transformedProduct: ProductDetailType = {
             id: data.id,
             name: data.name,
             price: `TSh ${data.price.toLocaleString()}`,
-            image: data.images?.[0] || '/placeholder.svg',
+            image: allImages[0],
+            images: allImages,
             badge: data.stock_quantity && data.stock_quantity > 50 ? 'BESTSELLER' : 
                    data.stock_quantity && data.stock_quantity < 10 ? 'LIMITED' : 'NEW',
             colors: ["Red", "White", "Black"], // Default colors for now
