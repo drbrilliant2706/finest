@@ -4,6 +4,8 @@ import ProductImages from "./ProductImages";
 import ProductInfo from "./ProductInfo";
 import ProductOptions from "./ProductOptions";
 import ProductActions from "./ProductActions";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 interface ProductDetailProps {
   product: {
