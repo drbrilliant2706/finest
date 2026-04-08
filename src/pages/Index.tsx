@@ -197,6 +197,8 @@ const Index = () => {
               <div className="lg:hidden border-t border-gray-200 py-4 bg-white">
                 <div className="flex flex-col space-y-1 px-2">
                   <PrefetchLink to="/" className="text-black py-3 px-2 font-medium rounded-lg hover:bg-gray-100 touch-manipulation">HOME</PrefetchLink>
+                  <PrefetchLink to="/men" className="text-black hover:text-gray-600 transition-colors py-3 px-2 rounded-lg hover:bg-gray-100 touch-manipulation">MEN</PrefetchLink>
+                  <PrefetchLink to="/women" className="text-black hover:text-gray-600 transition-colors py-3 px-2 rounded-lg hover:bg-gray-100 touch-manipulation">WOMEN</PrefetchLink>
                   <PrefetchLink to="/lookbook" className="text-black hover:text-gray-600 transition-colors py-3 px-2 rounded-lg hover:bg-gray-100 touch-manipulation">LOOKBOOK</PrefetchLink>
                   <PrefetchLink to="/about" className="text-black hover:text-gray-600 transition-colors py-3 px-2 rounded-lg hover:bg-gray-100 touch-manipulation">ABOUT</PrefetchLink>
                   <PrefetchLink to="/culture" className="text-black hover:text-gray-600 transition-colors py-3 px-2 rounded-lg hover:bg-gray-100 touch-manipulation">CULTURE</PrefetchLink>
