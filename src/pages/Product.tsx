@@ -21,6 +21,7 @@ interface ProductDetailType {
   name: string;
   price: string;
   image: string;
+  images: string[];
   badge: string;
   colors: string[];
   sizes: string[];
