@@ -26,15 +26,16 @@ const ProductDetail = ({ product }: ProductDetailProps) => {
   const [selectedColor, setSelectedColor] = useState("");
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="bg-gray-50 py-4">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="bg-muted py-4">
         <div className="max-w-7xl mx-auto px-4">
           <nav className="text-sm">
-            <a href="/" className="text-gray-500 hover:text-brand-green transition-colors">Home</a>
-            <span className="mx-2 text-gray-500">/</span>
-            <a href="/men" className="text-gray-500 hover:text-brand-green transition-colors">Men</a>
-            <span className="mx-2 text-gray-500">/</span>
-            <span className="text-black">{product.name}</span>
+            <a href="/" className="text-muted-foreground hover:text-primary transition-colors">Home</a>
+            <span className="mx-2 text-muted-foreground">/</span>
+            <a href="/men" className="text-muted-foreground hover:text-primary transition-colors">Men</a>
+            <span className="mx-2 text-muted-foreground">/</span>
+            <span className="text-foreground">{product.name}</span>
           </nav>
         </div>
       </div>
@@ -63,6 +64,7 @@ const ProductDetail = ({ product }: ProductDetailProps) => {
           </div>
         </div>
       </div>
+      <Footer variant="full" />
     </div>
   );
 };
