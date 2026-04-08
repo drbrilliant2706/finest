@@ -21,6 +21,7 @@ interface ProductDetailType {
   name: string;
   price: string;
   image: string;
+  images: string[];
   badge: string;
   colors: string[];
   sizes: string[];
@@ -52,11 +53,13 @@ const Product = () => {
 
         if (data) {
           // Transform database product to ProductDetail format
+          const allImages = data.images && data.images.length > 0 ? data.images : ['/placeholder.svg'];
           const transformedProduct: ProductDetailType = {
             id: data.id,
             name: data.name,
             price: `TSh ${data.price.toLocaleString()}`,
-            image: data.images?.[0] || '/placeholder.svg',
+            image: allImages[0],
+            images: allImages,
             badge: data.stock_quantity && data.stock_quantity > 50 ? 'BESTSELLER' : 
                    data.stock_quantity && data.stock_quantity < 10 ? 'LIMITED' : 'NEW',
             colors: ["Red", "White", "Black"], // Default colors for now
@@ -86,10 +89,10 @@ const Product = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading product...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-green mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading product...</p>
         </div>
       </div>
     );

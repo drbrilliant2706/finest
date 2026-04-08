@@ -19,7 +19,7 @@ const ProductOptions = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-black mb-3">Color: {selectedColor}</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-3">Color: {selectedColor}</h3>
         <div className="flex space-x-3">
           {colors.map((color) => (
             <button
@@ -28,7 +28,7 @@ const ProductOptions = ({
               className={`px-4 py-2 border rounded-md transition-all hover:scale-105 ${
                 selectedColor === color
                   ? 'border-brand-green bg-brand-green/10 text-brand-green'
-                  : 'border-gray-300 text-gray-700 hover:border-brand-green'
+                  : 'border-border text-muted-foreground hover:border-brand-green'
               }`}
             >
               {color}
@@ -38,7 +38,7 @@ const ProductOptions = ({
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-black mb-3">Size: {selectedSize}</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-3">Size: {selectedSize}</h3>
         <div className="grid grid-cols-4 gap-2">
           {sizes.map((size) => (
             <button
@@ -46,8 +46,8 @@ const ProductOptions = ({
               onClick={() => onSizeChange(size)}
               className={`py-3 border rounded-md transition-all hover:scale-105 ${
                 selectedSize === size
-                  ? 'border-brand-green bg-brand-green text-white'
-                  : 'border-gray-300 text-gray-700 hover:border-brand-green'
+                  ? 'border-brand-green bg-brand-green text-primary-foreground'
+                  : 'border-border text-muted-foreground hover:border-brand-green'
               }`}
             >
               {size}
