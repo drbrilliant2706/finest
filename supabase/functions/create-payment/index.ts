@@ -128,9 +128,9 @@ Deno.serve(async (req) => {
     const webhookUrl = `${supabaseUrl}/functions/v1/payment-webhook`;
     const idempotencyKey = order.id.slice(0, 30);
 
-    const nameParts = (buyer_name || "").split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join(" ") || "";
+    const nameParts = (buyer_name || "").trim().split(/\s+/).filter(Boolean);
+    const firstName = nameParts[0] || "Customer";
+    const lastName = nameParts.slice(1).join(" ") || firstName;
 
     const requestBody: Record<string, unknown> = {
       payment_type: "mobile",
@@ -140,17 +140,13 @@ Deno.serve(async (req) => {
       },
       phone_number: phone,
       webhook_url: webhookUrl,
-    };
-
-    if (firstName || lastName || buyer_email) {
-      requestBody.customer = {
-        firstname: firstName || "Customer",
-        lastname: lastName || "",
+      customer: {
+        firstname: firstName,
+        lastname: lastName,
         email: buyer_email || `${phone}@guest.local`,
-      };
-    }
-
-    requestBody.metadata = { order_id: order.id };
+      },
+      metadata: { order_id: order.id },
+    };
 
     console.log("Snippe request body:", JSON.stringify(requestBody));
 
