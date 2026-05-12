@@ -95,14 +95,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    const updateUserState = (session: Session) => {
-      const isAdminEmail = session.user.email === 'admin@africansfinest.com';
-      
+    const updateUserState = async (session: Session) => {
+      // Fetch role from server-side profiles table (do NOT trust client-side email checks)
+      let role: 'user' | 'admin' = 'user';
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        if (profile?.role === 'admin' || profile?.role === 'manager') {
+          role = 'admin';
+        }
+      } catch (e) {
+        console.error('Failed to load profile role:', e);
+      }
+
+      if (!mounted) return;
       setUser({
         id: session.user.id,
         email: session.user.email || '',
         name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-        role: isAdminEmail ? 'admin' : 'user'
+        role,
       });
       setSession(session);
     };
