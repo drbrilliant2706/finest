@@ -132,13 +132,21 @@ Deno.serve(async (req) => {
     const firstName = nameParts[0] || "Customer";
     const lastName = nameParts.slice(1).join(" ") || firstName;
 
-    requestBody.customer = {
-      firstname: firstName,
-      lastname: lastName,
-      email: buyer_email || `${phone}@guest.local`,
+    const requestBody: Record<string, unknown> = {
+      payment_type: "mobile",
+      details: {
+        amount: subtotal,
+        currency: currency || "TZS",
+      },
+      phone_number: phone,
+      webhook_url: webhookUrl,
+      customer: {
+        firstname: firstName,
+        lastname: lastName,
+        email: buyer_email || `${phone}@guest.local`,
+      },
+      metadata: { order_id: order.id },
     };
-
-    requestBody.metadata = { order_id: order.id };
 
     console.log("Snippe request body:", JSON.stringify(requestBody));
 
