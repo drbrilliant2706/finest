@@ -52,25 +52,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (mounted && initialSession?.user) {
           console.log('Initial session found:', initialSession.user.email);
-          updateUserState(initialSession);
+          await updateUserState(initialSession);
         }
 
         // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
+          (event, session) => {
             console.log('Auth state change:', event, session?.user?.email);
-            
+
             if (!mounted) return;
 
             setError(null);
-            
+
             if (session?.user) {
-              updateUserState(session);
+              setSession(session);
+              // Defer Supabase calls to avoid deadlock inside the auth callback
+              setTimeout(() => {
+                if (mounted) updateUserState(session);
+              }, 0);
             } else {
               setUser(null);
               setSession(null);
             }
-            
+
             setLoading(false);
           }
         );
