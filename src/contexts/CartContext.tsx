@@ -12,13 +12,16 @@ interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Omit<CartItem, 'quantity'>) => void;
+  addToCart: (product: Omit<CartItem, 'quantity'>, quantity?: number) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => string;
 }
+
+const sameVariant = (a: { id: string; size?: string; color?: string }, b: { id: string; size?: string; color?: string }) =>
+  a.id === b.id && (a.size || '') === (b.size || '') && (a.color || '') === (b.color || '');
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 const STORAGE_KEY = 'af_cart_items';
@@ -49,22 +52,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [items]);
 
-  const addToCart = (product: Omit<CartItem, 'quantity'>) => {
+  const addToCart = (product: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
+    const qty = Math.max(1, Math.floor(quantity));
     setItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
+      const existingItem = prevItems.find(item => sameVariant(item, product));
       if (existingItem) {
         return prevItems.map(item =>
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 }
+          sameVariant(item, product)
+            ? { ...item, quantity: item.quantity + qty }
             : item
         );
       }
-      return [...prevItems, { ...product, quantity: 1 }];
+      return [...prevItems, { ...product, quantity: qty }];
     });
   };
 
   const removeFromCart = (id: string) => {
-    setItems(prevItems => prevItems.filter(item => item.id !== id));
+    setItems(prevItems => {
+      const idx = prevItems.findIndex(item => item.id === id);
+      if (idx === -1) return prevItems;
+      return [...prevItems.slice(0, idx), ...prevItems.slice(idx + 1)];
+    });
   };
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -72,11 +80,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       removeFromCart(id);
       return;
     }
-    setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, quantity } : item
-      )
-    );
+    setItems(prevItems => {
+      const idx = prevItems.findIndex(item => item.id === id);
+      if (idx === -1) return prevItems;
+      const next = [...prevItems];
+      next[idx] = { ...next[idx], quantity: Math.floor(quantity) };
+      return next;
+    });
   };
 
   const clearCart = () => {
@@ -89,7 +99,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const getTotalPrice = () => {
     const total = items.reduce((sum, item) => {
-      const price = parseFloat(item.price.replace(/[^\d.]/g, ''));
+      const parsed = parseFloat((item.price || '').replace(/[^\d.]/g, ''));
+      const price = Number.isFinite(parsed) ? parsed : 0;
       return sum + (price * item.quantity);
     }, 0);
     return total.toLocaleString();

@@ -44,16 +44,17 @@ const ProductActions = ({ product, selectedSize, selectedColor }: ProductActions
       return;
     }
 
-    for (let i = 0; i < quantity; i++) {
-      addToCart({
+    addToCart(
+      {
         id: product.id,
         name: product.name,
         price: product.price,
         image: product.image,
         size: selectedSize,
         color: selectedColor,
-      });
-    }
+      },
+      quantity
+    );
 
     toast({
       title: "Added to cart!",
