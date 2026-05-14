@@ -12,13 +12,16 @@ interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Omit<CartItem, 'quantity'>) => void;
+  addToCart: (product: Omit<CartItem, 'quantity'>, quantity?: number) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => string;
 }
+
+const sameVariant = (a: { id: string; size?: string; color?: string }, b: { id: string; size?: string; color?: string }) =>
+  a.id === b.id && (a.size || '') === (b.size || '') && (a.color || '') === (b.color || '');
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 const STORAGE_KEY = 'af_cart_items';
