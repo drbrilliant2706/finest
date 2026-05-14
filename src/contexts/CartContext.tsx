@@ -52,17 +52,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [items]);
 
-  const addToCart = (product: Omit<CartItem, 'quantity'>) => {
+  const addToCart = (product: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
+    const qty = Math.max(1, Math.floor(quantity));
     setItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
+      const existingItem = prevItems.find(item => sameVariant(item, product));
       if (existingItem) {
         return prevItems.map(item =>
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 }
+          sameVariant(item, product)
+            ? { ...item, quantity: item.quantity + qty }
             : item
         );
       }
-      return [...prevItems, { ...product, quantity: 1 }];
+      return [...prevItems, { ...product, quantity: qty }];
     });
   };
 
