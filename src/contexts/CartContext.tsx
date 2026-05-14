@@ -68,7 +68,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeFromCart = (id: string) => {
-    setItems(prevItems => prevItems.filter(item => item.id !== id));
+    setItems(prevItems => {
+      const idx = prevItems.findIndex(item => item.id === id);
+      if (idx === -1) return prevItems;
+      return [...prevItems.slice(0, idx), ...prevItems.slice(idx + 1)];
+    });
   };
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -76,11 +80,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       removeFromCart(id);
       return;
     }
-    setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, quantity } : item
-      )
-    );
+    setItems(prevItems => {
+      const idx = prevItems.findIndex(item => item.id === id);
+      if (idx === -1) return prevItems;
+      const next = [...prevItems];
+      next[idx] = { ...next[idx], quantity: Math.floor(quantity) };
+      return next;
+    });
   };
 
   const clearCart = () => {
@@ -93,7 +99,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const getTotalPrice = () => {
     const total = items.reduce((sum, item) => {
-      const price = parseFloat(item.price.replace(/[^\d.]/g, ''));
+      const parsed = parseFloat((item.price || '').replace(/[^\d.]/g, ''));
+      const price = Number.isFinite(parsed) ? parsed : 0;
       return sum + (price * item.quantity);
     }, 0);
     return total.toLocaleString();
