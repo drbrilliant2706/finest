@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface CartItem {
   id: string;
@@ -22,6 +21,7 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+const STORAGE_KEY = 'af_cart_items';
 
 export const useCart = () => {
   const context = useContext(CartContext);
@@ -32,7 +32,22 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      // ignore quota / serialization errors
+    }
+  }, [items]);
 
   const addToCart = (product: Omit<CartItem, 'quantity'>) => {
     setItems(prevItems => {

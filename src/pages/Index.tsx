@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, ShoppingCart, Search, User, Menu } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -32,13 +32,13 @@ const Index = () => {
 
   const { products, loading: productsLoading } = useProductsQuery({ limit: 4 });
 
-  const featuredProducts = products.map(product => ({
+  const featuredProducts = useMemo(() => products.map(product => ({
     id: product.id,
     name: product.name,
     price: `TSh ${product.price.toLocaleString()}`,
     image: product.images && product.images.length > 0 ? product.images[0] : "/placeholder.svg",
     badge: "NEW"
-  }));
+  })), [products]);
 
   const handleAddToCart = (product: any) => {
     if (!user) {
