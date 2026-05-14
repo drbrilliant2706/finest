@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface FavoriteItem {
   id: string;
@@ -16,6 +15,7 @@ interface FavoritesContextType {
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
+const STORAGE_KEY = 'af_favorites';
 
 export const useFavorites = () => {
   const context = useContext(FavoritesContext);
@@ -26,10 +26,25 @@ export const useFavorites = () => {
 };
 
 export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+    } catch {
+      // ignore
+    }
+  }, [favorites]);
 
   const addToFavorites = (product: FavoriteItem) => {
-    setFavorites(prev => [...prev, product]);
+    setFavorites(prev => (prev.some(item => item.id === product.id) ? prev : [...prev, product]));
   };
 
   const removeFromFavorites = (id: string) => {
